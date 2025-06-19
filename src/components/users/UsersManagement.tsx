@@ -119,7 +119,7 @@ const UsersManagement = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre</Label>
-                  <Input i d="name" placeholder="Nombre" />
+                  <Input id="name" placeholder="Nombre" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Apellido</Label>
