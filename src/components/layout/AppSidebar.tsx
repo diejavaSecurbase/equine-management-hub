@@ -18,7 +18,9 @@ import {
   FileText, 
   Calendar,
   User,
-  LogOut
+  LogOut,
+  Palette,
+  Award
 } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -54,6 +56,16 @@ const menuItems = [
     title: "Traslados",
     url: "/travels",
     icon: Calendar,
+  },
+  {
+    title: "Pelajes",
+    url: "/coats",
+    icon: Palette,
+  },
+  {
+    title: "Razas",
+    url: "/breeds",
+    icon: Award,
   },
   {
     title: "Configuración",

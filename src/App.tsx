@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,8 @@ import EquinesManagement from './components/equines/EquinesManagement';
 import HealthBooksManagement from './components/health-books/HealthBooksManagement';
 import StablesManagement from './components/stables/StablesManagement';
 import TravelsManagement from './components/travels/TravelsManagement';
+import CoatsManagement from './components/coats/CoatsManagement';
+import BreedsManagement from './components/breeds/BreedsManagement';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,6 +96,26 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <MainLayout>
               <TravelsManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/coats" 
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <CoatsManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/breeds" 
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <BreedsManagement />
             </MainLayout>
           </ProtectedRoute>
         } 
