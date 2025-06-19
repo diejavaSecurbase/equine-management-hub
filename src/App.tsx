@@ -10,6 +10,9 @@ import MainLayout from './components/layout/MainLayout';
 import Dashboard from './components/dashboard/Dashboard';
 import UsersManagement from './components/users/UsersManagement';
 import EquinesManagement from './components/equines/EquinesManagement';
+import HealthBooksManagement from './components/health-books/HealthBooksManagement';
+import StablesManagement from './components/stables/StablesManagement';
+import TravelsManagement from './components/travels/TravelsManagement';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
