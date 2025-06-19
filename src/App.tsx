@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -73,10 +72,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MainLayout>
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Libretas Sanitarias</h1>
-                <p className="text-gray-600">Funcionalidad en desarrollo</p>
-              </div>
+              <HealthBooksManagement />
             </MainLayout>
           </ProtectedRoute>
         } 
@@ -86,10 +82,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MainLayout>
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Establecimientos</h1>
-                <p className="text-gray-600">Funcionalidad en desarrollo</p>
-              </div>
+              <StablesManagement />
             </MainLayout>
           </ProtectedRoute>
         } 
@@ -99,10 +92,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MainLayout>
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Traslados</h1>
-                <p className="text-gray-600">Funcionalidad en desarrollo</p>
-              </div>
+              <TravelsManagement />
             </MainLayout>
           </ProtectedRoute>
         } 
