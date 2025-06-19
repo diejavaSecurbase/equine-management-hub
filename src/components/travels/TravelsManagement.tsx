@@ -315,7 +315,7 @@ const TravelsManagement = () => {
                   <SelectValue placeholder="Todos los equinos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los equinos</SelectItem>
+                  <SelectItem value="all">Todos los equinos</SelectItem>
                   {availableEquines.map((equine) => (
                     <SelectItem key={equine.id} value={equine.id.toString()}>
                       {equine.name}
@@ -331,7 +331,7 @@ const TravelsManagement = () => {
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los estados</SelectItem>
+                  <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="PENDING">Pendiente</SelectItem>
                   <SelectItem value="CONFIRMED">Confirmado</SelectItem>
                   <SelectItem value="IN_PROGRESS">En Progreso</SelectItem>

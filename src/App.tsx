@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +15,7 @@ import TravelsManagement from './components/travels/TravelsManagement';
 import CoatsManagement from './components/coats/CoatsManagement';
 import BreedsManagement from './components/breeds/BreedsManagement';
 import NotFound from "./pages/NotFound";
+import SettingsManagement from './components/settings/SettingsManagement';
 
 const queryClient = new QueryClient();
 
@@ -125,10 +125,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MainLayout>
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Configuración</h1>
-                <p className="text-gray-600">Funcionalidad en desarrollo</p>
-              </div>
+              <SettingsManagement />
             </MainLayout>
           </ProtectedRoute>
         } 
