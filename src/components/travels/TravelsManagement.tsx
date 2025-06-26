@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,22 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Filter, MapPin, Calendar, Truck, User } from 'lucide-react';
-
-interface TravelInfo {
-  id: number;
-  reference: string;
-  origin: LocationInfo;
-  destination: LocationInfo;
-  travelStatus: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'DONE' | 'CANCELED';
-  startAt: string;
-  endsAt: string;
-  creator: MinUserInfoDTO;
-  deleted: boolean;
-  createdAt: string;
-  updatedAt: string;
-  equines?: EquineMinInfo[];
-  motivo?: string;
-}
+import { travelService, TravelInfo, AddTravelDTO, EditTravelDTO } from '@/services/travelService';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 interface LocationInfo {
   id: number;
@@ -57,169 +44,143 @@ interface EquineMinInfo {
 }
 
 const TravelsManagement = () => {
+  const [travels, setTravels] = useState<TravelInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [pageSize] = useState(10);
+  const { toast } = useToast();
+
+  // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEquine, setFilterEquine] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
 
-  const mockTravels: TravelInfo[] = [
-    {
-      id: 1,
-      reference: 'TRV001',
-      origin: {
-        id: 1,
-        alias: 'Haras San Jorge',
-        country: 'Argentina',
-        province: 'Buenos Aires',
-        city: 'San Isidro',
-        address: 'Av. Libertador 1234',
-        stableName: 'Haras San Jorge',
-        stableRenspa: 'RENSPA001',
-        eventName: '',
-        deleted: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      destination: {
-        id: 2,
-        alias: 'Club Hípico',
-        country: 'Argentina',
-        province: 'Buenos Aires',
-        city: 'Palermo',
-        address: 'Av. del Libertador 4101',
-        stableName: 'Club Hípico Argentino',
-        stableRenspa: 'RENSPA003',
-        eventName: 'Concurso de Salto',
-        deleted: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      travelStatus: 'DONE',
-      startAt: '2024-01-15T08:00:00Z',
-      endsAt: '2024-01-17T18:00:00Z',
-      creator: {
-        id: 1,
-        name: 'Juan',
-        lastName: 'Pérez',
-        identification: '20-12345678-9',
-        email: 'juan.perez@email.com',
-        profile: 'ADMINISTRATOR',
-        deleted: false
-      },
-      deleted: false,
-      createdAt: '2024-01-10T10:00:00Z',
-      updatedAt: '2024-01-17T18:30:00Z',
-      equines: [
-        { id: 1, name: 'Thunderbolt', chip: 'CHIP001' }
-      ],
-      motivo: 'Participación en concurso de salto'
-    },
-    {
-      id: 2,
-      reference: 'TRV002',
-      origin: {
-        id: 2,
-        alias: 'El Ombú',
-        country: 'Argentina',
-        province: 'Córdoba',
-        city: 'Villa Carlos Paz',
-        address: 'Ruta 38 Km 15',
-        stableName: 'Establecimiento El Ombú',
-        stableRenspa: 'RENSPA002',
-        eventName: '',
-        deleted: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      destination: {
-        id: 3,
-        alias: 'Veterinaria Central',
-        country: 'Argentina',
-        province: 'Córdoba',
-        city: 'Córdoba Capital',
-        address: 'Av. Colón 1500',
-        stableName: '',
-        stableRenspa: '',
-        eventName: 'Consulta veterinaria',
-        deleted: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      travelStatus: 'CONFIRMED',
-      startAt: '2024-01-25T09:00:00Z',
-      endsAt: '2024-01-25T15:00:00Z',
-      creator: {
-        id: 3,
-        name: 'María',
-        lastName: 'González',
-        identification: '27-87654321-2',
-        email: 'maria.gonzalez@email.com',
-        profile: 'ADMINISTRATOR',
-        deleted: false
-      },
-      deleted: false,
-      createdAt: '2024-01-20T14:00:00Z',
-      updatedAt: '2024-01-20T14:00:00Z',
-      equines: [
-        { id: 2, name: 'Lightning', chip: 'CHIP002' }
-      ],
-      motivo: 'Consulta veterinaria de rutina'
-    },
-    {
-      id: 3,
-      reference: 'TRV003',
-      origin: {
-        id: 1,
-        alias: 'Haras San Jorge',
-        country: 'Argentina',
-        province: 'Buenos Aires',
-        city: 'San Isidro',
-        address: 'Av. Libertador 1234',
-        stableName: 'Haras San Jorge',
-        stableRenspa: 'RENSPA001',
-        eventName: '',
-        deleted: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      destination: {
-        id: 4,
-        alias: 'Haras La Pampa',
-        country: 'Argentina',
-        province: 'La Pampa',
-        city: 'General Pico',
-        address: 'Ruta 5 Km 320',
-        stableName: 'Haras La Pampa',
-        stableRenspa: 'RENSPA004',
-        eventName: '',
-        deleted: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-      },
-      travelStatus: 'PENDING',
-      startAt: '2024-02-01T10:00:00Z',
-      endsAt: '2024-02-03T16:00:00Z',
-      creator: {
-        id: 1,
-        name: 'Juan',
-        lastName: 'Pérez',
-        identification: '20-12345678-9',
-        email: 'juan.perez@email.com',
-        profile: 'ADMINISTRATOR',
-        deleted: false
-      },
-      deleted: false,
-      createdAt: '2024-01-22T11:00:00Z',
-      updatedAt: '2024-01-22T11:00:00Z',
-      equines: [
-        { id: 1, name: 'Thunderbolt', chip: 'CHIP001' }
-      ],
-      motivo: 'Traslado para reproducción'
-    }
-  ];
+  // ABM
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedTravel, setSelectedTravel] = useState<TravelInfo | null>(null);
+  const [formData, setFormData] = useState<AddTravelDTO | EditTravelDTO>({
+    reference: '',
+    origin: { alias: '', country: '', province: '', city: '', address: '' },
+    destination: { alias: '', country: '', province: '', city: '', address: '' },
+    startAt: '',
+    endsAt: '',
+    creatorId: 0,
+    equineIds: [],
+  });
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [addForm, setAddForm] = useState<AddTravelDTO>({
+    reference: '',
+    origin: { country: '', province: '', city: '', address: '', alias: '' },
+    destination: { country: '', province: '', city: '', address: '', alias: '' },
+    startAt: '',
+    endsAt: '',
+    creatorId: 1, // TODO: reemplazar por el usuario logueado
+    equineIds: [],
+  });
+  const [addLoading, setAddLoading] = useState(false);
+  const [owners, setOwners] = useState<any[]>([]);
+  const [equines, setEquines] = useState<any[]>([]);
+  const [selectedOwner, setSelectedOwner] = useState<string>('');
+  const [selectedEquines, setSelectedEquines] = useState<string[]>([]);
+  const [ownersLoading, setOwnersLoading] = useState(false);
+  const [equinesLoading, setEquinesLoading] = useState(false);
 
-  const [travels] = useState(mockTravels);
+  useEffect(() => {
+    loadTravels();
+  }, [currentPage, pageSize]);
+
+  useEffect(() => {
+    // Cargar propietarios al abrir el modal de alta
+    if (isAddDialogOpen) {
+      setOwnersLoading(true);
+      travelService.getOwners().then(data => {
+        setOwners(data);
+        setOwnersLoading(false);
+      });
+      setSelectedOwner('');
+      setEquines([]);
+      setSelectedEquines([]);
+    }
+  }, [isAddDialogOpen]);
+
+  useEffect(() => {
+    // Cargar equinos al seleccionar propietario
+    if (selectedOwner) {
+      setEquinesLoading(true);
+      travelService.getEquinesByOwner(Number(selectedOwner)).then(data => {
+        setEquines(data);
+        setEquinesLoading(false);
+      });
+      setSelectedEquines([]);
+    } else {
+      setEquines([]);
+      setSelectedEquines([]);
+    }
+  }, [selectedOwner]);
+
+  const loadTravels = async () => {
+    try {
+      setLoading(true);
+      const response = await travelService.getTravels(currentPage, pageSize, {}); // Puedes agregar filtros aquí
+      setTravels(response.content);
+      setTotalPages(response.totalPages);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Error al cargar los traslados',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Métodos ABM (alta, edición, eliminación)
+  const handleCreateTravel = async () => {
+    try {
+      setLoading(true);
+      await travelService.addTravel(formData as AddTravelDTO);
+      setIsDialogOpen(false);
+      loadTravels();
+      toast({ title: 'Traslado creado', description: 'El traslado fue creado correctamente.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Error al crear el traslado', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditTravel = async () => {
+    if (!selectedTravel) return;
+    try {
+      setLoading(true);
+      await travelService.editTravel(selectedTravel.id, formData as EditTravelDTO);
+      setIsDialogOpen(false);
+      loadTravels();
+      toast({ title: 'Traslado actualizado', description: 'El traslado fue actualizado correctamente.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Error al actualizar el traslado', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTravel = async (id: number) => {
+    try {
+      setLoading(true);
+      await travelService.deleteTravel(id);
+      loadTravels();
+      toast({ title: 'Traslado eliminado', description: 'El traslado fue eliminado correctamente.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Error al eliminar el traslado', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const availableEquines = [
     { id: 1, name: 'Thunderbolt' },
@@ -276,6 +237,44 @@ const TravelsManagement = () => {
     setFilterDateTo('');
   };
 
+  // Handler temporal para alta de traslado
+  const handleAddTravel = async () => {
+    if (!selectedOwner) {
+      toast({ title: 'Error', description: 'Debes seleccionar un propietario.', variant: 'destructive' });
+      return;
+    }
+    if (!selectedEquines.length) {
+      toast({ title: 'Error', description: 'Debes seleccionar al menos un equino.', variant: 'destructive' });
+      return;
+    }
+    setAddLoading(true);
+    try {
+      await travelService.addTravel({
+        ...addForm,
+        creatorId: Number(selectedOwner),
+        equineIds: selectedEquines.map(Number),
+      });
+      setIsAddDialogOpen(false);
+      setAddForm({
+        reference: '',
+        origin: { country: '', province: '', city: '', address: '', alias: '' },
+        destination: { country: '', province: '', city: '', address: '', alias: '' },
+        startAt: '',
+        endsAt: '',
+        creatorId: 1,
+        equineIds: [],
+      });
+      setSelectedOwner('');
+      setSelectedEquines([]);
+      toast({ title: 'Traslado creado', description: 'El traslado fue creado correctamente.' });
+      loadTravels();
+    } catch (e) {
+      toast({ title: 'Error', description: 'No se pudo crear el traslado.' });
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -283,6 +282,12 @@ const TravelsManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Consulta de Traslados</h1>
           <p className="text-gray-600 mt-2">Consulta y seguimiento de traslados de equinos</p>
         </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <Button onClick={() => setIsAddDialogOpen(true)} variant="default">
+          Nuevo traslado
+        </Button>
       </div>
 
       {/* Filtros */}
@@ -479,6 +484,69 @@ const TravelsManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-lg w-full p-0 sm:p-6">
+          <DialogTitle className="px-6 pt-6">Nuevo traslado</DialogTitle>
+          <div
+            className="px-6 pb-6"
+            style={{ maxHeight: '70vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}
+          >
+            <Input placeholder="Referencia" value={addForm.reference} onChange={e => setAddForm(f => ({ ...f, reference: e.target.value }))} />
+            {/* Selector de propietario */}
+            <Label>Propietario</Label>
+            <Select value={selectedOwner} onValueChange={setSelectedOwner} disabled={ownersLoading}>
+              <SelectTrigger>
+                <SelectValue placeholder={ownersLoading ? 'Cargando...' : 'Selecciona un propietario'} />
+              </SelectTrigger>
+              <SelectContent>
+                {owners.map((owner) => (
+                  <SelectItem key={owner.id} value={owner.id.toString()}>
+                    {owner.name} {owner.lastName} ({owner.identification})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Selector múltiple de equinos */}
+            <Label>Equinos</Label>
+            <select
+              multiple
+              value={selectedEquines}
+              onChange={e => {
+                const options = Array.from(e.target.selectedOptions).map(opt => opt.value);
+                setSelectedEquines(options);
+              }}
+              disabled={!selectedOwner || equinesLoading}
+              style={{ minHeight: 80, border: '1px solid #ccc', borderRadius: 4, padding: 4 }}
+            >
+              {equines.map((equine: any) => (
+                <option key={equine.id} value={equine.id.toString()}>
+                  {equine.name} ({equine.chip})
+                </option>
+              ))}
+            </select>
+            {/* Resto de campos */}
+            <div style={{ fontWeight: 600 }}>Origen</div>
+            <Input placeholder="País" value={addForm.origin.country} onChange={e => setAddForm(f => ({ ...f, origin: { ...f.origin, country: e.target.value } }))} />
+            <Input placeholder="Provincia" value={addForm.origin.province} onChange={e => setAddForm(f => ({ ...f, origin: { ...f.origin, province: e.target.value } }))} />
+            <Input placeholder="Ciudad" value={addForm.origin.city} onChange={e => setAddForm(f => ({ ...f, origin: { ...f.origin, city: e.target.value } }))} />
+            <Textarea placeholder="Dirección" value={addForm.origin.address} onChange={e => setAddForm(f => ({ ...f, origin: { ...f.origin, address: e.target.value } }))} />
+            <div style={{ fontWeight: 600 }}>Destino</div>
+            <Input placeholder="País" value={addForm.destination.country} onChange={e => setAddForm(f => ({ ...f, destination: { ...f.destination, country: e.target.value } }))} />
+            <Input placeholder="Provincia" value={addForm.destination.province} onChange={e => setAddForm(f => ({ ...f, destination: { ...f.destination, province: e.target.value } }))} />
+            <Input placeholder="Ciudad" value={addForm.destination.city} onChange={e => setAddForm(f => ({ ...f, destination: { ...f.destination, city: e.target.value } }))} />
+            <Textarea placeholder="Dirección" value={addForm.destination.address} onChange={e => setAddForm(f => ({ ...f, destination: { ...f.destination, address: e.target.value } }))} />
+            <label style={{ fontWeight: 600 }}>Fecha y hora de inicio</label>
+            <Input type="datetime-local" value={addForm.startAt} onChange={e => setAddForm(f => ({ ...f, startAt: e.target.value }))} />
+            <label style={{ fontWeight: 600 }}>Fecha y hora de fin (opcional)</label>
+            <Input type="datetime-local" value={addForm.endsAt} onChange={e => setAddForm(f => ({ ...f, endsAt: e.target.value }))} />
+          </div>
+          <div className="px-6 pb-6 flex gap-2 justify-end">
+            <Button onClick={handleAddTravel} variant="default" disabled={addLoading}>Guardar</Button>
+            <Button onClick={() => setIsAddDialogOpen(false)} variant="secondary" disabled={addLoading}>Cancelar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

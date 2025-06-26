@@ -12,7 +12,6 @@ import EquinesManagement from './components/equines/EquinesManagement';
 import HealthBooksManagement from './components/health-books/HealthBooksManagement';
 import StablesManagement from './components/stables/StablesManagement';
 import TravelsManagement from './components/travels/TravelsManagement';
-import CoatsManagement from './components/coats/CoatsManagement';
 import BreedsManagement from './components/breeds/BreedsManagement';
 import NotFound from "./pages/NotFound";
 import SettingsManagement from './components/settings/SettingsManagement';
@@ -20,13 +19,13 @@ import SettingsManagement from './components/settings/SettingsManagement';
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
   }
   
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   
@@ -34,11 +33,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginForm />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route 
         path="/dashboard" 
@@ -101,16 +100,6 @@ const AppRoutes = () => {
         } 
       />
       <Route 
-        path="/coats" 
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <CoatsManagement />
-            </MainLayout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
         path="/breeds" 
         element={
           <ProtectedRoute>
@@ -140,11 +129,11 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
+      <BrowserRouter>
+        <AuthProvider>
           <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -1,17 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-export interface User {
-  id: number;
-  name: string;
-  lastName: string;
-  email: string;
-  profile: 'ADMINISTRATOR' | 'VETERINARIAN' | 'VERIFIER';
-}
-
 interface AuthContextType {
-  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
@@ -28,65 +20,78 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     // Check if user is already logged in
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const savedToken = sessionStorage.getItem('token');
+    if (savedToken) {
+      setToken(savedToken);
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock authentication - in real app, this would be an API call
-    if (email === 'admin@equinos.com' && password === 'admin123') {
-      const mockUser: User = {
-        id: 1,
-        name: 'Juan',
-        lastName: 'Pérez',
-        email: 'admin@equinos.com',
-        profile: 'ADMINISTRATOR'
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      toast({
-        title: "¡Bienvenido!",
-        description: "Has iniciado sesión correctamente.",
+    try {
+      const response = await fetch('http://localhost:8090/equusid/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
+
+      const result = await response.json();
+
+      if (response.ok && result.success && result.data?.token) {
+        // Guardar el token en sessionStorage y estado
+        const newToken = result.data.token;
+        sessionStorage.setItem('token', newToken);
+        setToken(newToken);
+        
+        toast({
+          title: "¡Bienvenido!",
+          description: "Has iniciado sesión correctamente.",
+        });
+
+        return true;
+      } else {
+        toast({
+          title: "Error de autenticación",
+          description: result.error?.message || "Credenciales inválidas.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      toast({
+        title: "Error de red",
+        description: "No se pudo conectar con el servidor. Intenta más tarde.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
       setIsLoading(false);
-      return true;
     }
-    
-    toast({
-      title: "Error de autenticación",
-      description: "Credenciales inválidas. Intenta con admin@equinos.com / admin123",
-      variant: "destructive",
-    });
-    setIsLoading(false);
-    return false;
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+    setToken(null);
+    sessionStorage.removeItem('token');
     toast({
       title: "Sesión cerrada",
       description: "Has cerrado sesión correctamente.",
     });
   };
 
+  const isAuthenticated = Boolean(token);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ token, isAuthenticated, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

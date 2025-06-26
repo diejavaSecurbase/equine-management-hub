@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Edit, Trash2, Eye, FileText, Syringe, Droplets } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { healthBookService, HealthBookMinInfo, HealthBookPage } from '@/services/healthBookService';
+import { travelService } from '@/services/travelService';
+import { userService } from '@/services/userService';
 
 interface HealthBookInfo {
   id: number;
@@ -78,112 +80,38 @@ interface MinUserInfoDTO {
 
 const HealthBooksManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [selectedHealthBook, setSelectedHealthBook] = useState<HealthBookInfo | null>(null);
+  const [selectedHealthBook, setSelectedHealthBook] = useState<HealthBookMinInfo | null>(null);
   const { toast } = useToast();
 
-  const mockHealthBooks: HealthBookInfo[] = [
-    {
-      id: 1,
-      senasaId: 'HSB001',
-      state: 'APPROVED',
-      approvedAt: '2024-01-15T10:30:00Z',
-      deleted: false,
-      updatedAt: '2024-01-15T10:30:00Z',
-      extractionInfoList: [
-        {
-          id: 1,
-          healthBookId: 1,
-          extractionDate: '2024-01-10T09:00:00Z',
-          veterinarianName: 'Dr. Carlos',
-          veterinarianLastName: 'López',
-          veterinarianIdentification: '20-11111111-1',
-          deleted: false
-        }
-      ],
-      vaccineApplicationInfoList: [
-        {
-          id: 1,
-          vaccineCommercialName: 'Equivac EHV',
-          applicationDate: '2024-01-12T14:00:00Z',
-          vaccineDrug: 'Herpesvirus',
-          vaccineGTIN: '1234567890123',
-          vaccineManufacturer: 'Zoetis',
-          vaccineCountry: 'Argentina',
-          vaccineLotNumber: 'LOT123',
-          vaccineFabricationDate: '2023-06-01',
-          vaccineExpirationDate: '2025-06-01',
-          vaccineApplicationNumber: 1,
-          veterinarianName: 'Dr. Carlos',
-          veterinarianLastName: 'López',
-          veterinarianIdentification: '20-11111111-1',
-          deleted: false
-        }
-      ],
-      equineMinInfo: {
-        id: 1,
-        bioId: 'BIO001',
-        isIrisEnrolled: true,
-        name: 'Thunderbolt',
-        healthBookId: 1,
-        healthBookIdentification: 'HSB001',
-        healthBookStatus: 'APPROVED',
-        chip: 'CHIP001',
-        deleted: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-15T10:30:00Z'
-      },
-      approvalVeterinarian: {
-        id: 2,
-        name: 'Dr. Carlos',
-        lastName: 'López',
-        identification: '20-11111111-1',
-        email: 'carlos.lopez@email.com',
-        profile: 'VETERINARIAN',
-        deleted: false
-      }
-    },
-    {
-      id: 2,
-      senasaId: 'HSB002',
-      state: 'PENDING',
-      approvedAt: '',
-      deleted: false,
-      updatedAt: '2024-01-18T15:45:00Z',
-      extractionInfoList: [],
-      vaccineApplicationInfoList: [],
-      equineMinInfo: {
-        id: 2,
-        bioId: 'BIO002',
-        isIrisEnrolled: false,
-        name: 'Lightning',
-        healthBookId: 2,
-        healthBookIdentification: 'HSB002',
-        healthBookStatus: 'PENDING',
-        chip: 'CHIP002',
-        deleted: false,
-        createdAt: '2024-01-18T00:00:00Z',
-        updatedAt: '2024-01-18T15:45:00Z'
-      },
-      approvalVeterinarian: {
-        id: 0,
-        name: '',
-        lastName: '',
-        identification: '',
-        email: '',
-        profile: '',
-        deleted: false
-      }
-    }
-  ];
+  // Paginación
+  const [healthBooks, setHealthBooks] = useState<HealthBookMinInfo[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [pageSize] = useState(10);
+  const [loading, setLoading] = useState(false);
 
-  const [healthBooks, setHealthBooks] = useState(mockHealthBooks);
+  // Detalle real de la libreta sanitaria
+  const [detail, setDetail] = useState<HealthBookInfo | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    healthBookService.getHealthBooks(currentPage, pageSize)
+      .then((page: HealthBookPage) => {
+        setHealthBooks(page.content);
+        setTotalPages(page.totalPages);
+      })
+      .catch(() => {
+        toast({ title: 'Error', description: 'No se pudieron cargar las libretas sanitarias', variant: 'destructive' });
+      })
+      .finally(() => setLoading(false));
+  }, [currentPage, pageSize]);
 
   const filteredHealthBooks = healthBooks.filter(book =>
-    book.equineMinInfo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    book.senasaId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    book.state.toLowerCase().includes(searchTerm.toLowerCase())
+    book.equineName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (book.identification || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (book.state || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStateBadge = (state: string) => {
@@ -200,19 +128,18 @@ const HealthBooksManagement = () => {
     );
   };
 
-  const handleDeleteHealthBook = (healthBookId: number) => {
-    setHealthBooks(healthBooks.map(book => 
-      book.id === healthBookId ? { ...book, deleted: true } : book
-    ));
-    toast({
-      title: "Libreta eliminada",
-      description: "La libreta sanitaria ha sido eliminada correctamente.",
-    });
-  };
-
-  const handleViewDetail = (healthBook: HealthBookInfo) => {
-    setSelectedHealthBook(healthBook);
+  const handleViewDetail = async (healthBook: HealthBookMinInfo) => {
     setIsDetailOpen(true);
+    setLoadingDetail(true);
+    try {
+      const data = await healthBookService.getHealthBook(healthBook.id);
+      setDetail(data.data);
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo obtener el detalle', variant: 'destructive' });
+      setDetail(null);
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
   return (
@@ -222,56 +149,6 @@ const HealthBooksManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Libretas Sanitarias</h1>
           <p className="text-gray-600 mt-2">Gestión de libretas sanitarias de equinos</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gradient-primary text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Libreta
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Crear Nueva Libreta Sanitaria</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="senasaId">ID SENASA</Label>
-                <Input id="senasaId" placeholder="HSB001" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="equine">Equino</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar equino" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Thunderbolt</SelectItem>
-                    <SelectItem value="2">Lightning</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="veterinarian">Veterinario</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar veterinario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">Dr. Carlos López</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button className="gradient-primary text-white">
-                  Crear Libreta
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       <Card className="shadow-md border-0">
@@ -302,43 +179,45 @@ const HealthBooksManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredHealthBooks.map((book) => (
-                <TableRow key={book.id} className={book.deleted ? 'opacity-50' : ''}>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium">{book.senasaId}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{book.equineMinInfo.name}</TableCell>
-                  <TableCell>{getStateBadge(book.state)}</TableCell>
-                  <TableCell>
-                    {book.approvalVeterinarian.name ? 
-                      `${book.approvalVeterinarian.name} ${book.approvalVeterinarian.lastName}` : 
-                      'Sin asignar'
-                    }
-                  </TableCell>
-                  <TableCell>{new Date(book.updatedAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => handleViewDetail(book)}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleDeleteHealthBook(book.id)}
-                        disabled={book.deleted}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredHealthBooks.map((book) => {
+                let fecha = '-';
+                if (book.updatedAt) {
+                  const d = new Date(book.updatedAt);
+                  fecha = isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
+                }
+                return (
+                  <TableRow key={book.id} className={book.deleted ? 'opacity-50' : ''}>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="font-medium">{book.identification}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{book.equineName}</TableCell>
+                    <TableCell>{getStateBadge(book.state || '')}</TableCell>
+                    <TableCell><span>-</span></TableCell>
+                    <TableCell>{fecha}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => handleViewDetail(book)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" disabled onClick={() => toast({ title: 'No disponible', description: 'La edición de libretas no está implementada.', variant: 'destructive' })}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => toast({ title: 'No permitido', description: 'La baja de la libreta sanitaria se realiza eliminando el equino asociado.', variant: 'destructive' })}
+                          disabled={book.deleted}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -348,30 +227,26 @@ const HealthBooksManagement = () => {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Detalle de Libreta Sanitaria - {selectedHealthBook?.senasaId}</DialogTitle>
+            <DialogTitle>Detalle de Libreta Sanitaria - {detail?.senasaId || selectedHealthBook?.identification}</DialogTitle>
           </DialogHeader>
-          {selectedHealthBook && (
+          {loadingDetail ? (
+            <p className="text-gray-500">Cargando detalle...</p>
+          ) : detail ? (
             <div className="space-y-6 pt-4">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Información General</h3>
                   <div className="space-y-2">
-                    <p><strong>Equino:</strong> {selectedHealthBook.equineMinInfo.name}</p>
-                    <p><strong>Estado:</strong> {getStateBadge(selectedHealthBook.state)}</p>
-                    <p><strong>Chip:</strong> {selectedHealthBook.equineMinInfo.chip}</p>
-                    {selectedHealthBook.approvedAt && (
-                      <p><strong>Aprobada:</strong> {new Date(selectedHealthBook.approvedAt).toLocaleDateString()}</p>
-                    )}
+                    <p><strong>Equino:</strong> {detail.equineMinInfo?.name}</p>
+                    <p><strong>Estado:</strong> {getStateBadge(detail.state || '')}</p>
+                    <p><strong>Identificación:</strong> {detail.senasaId}</p>
+                    <p><strong>Actualizado:</strong> {detail.updatedAt ? new Date(detail.updatedAt).toLocaleString() : '-'}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Veterinario Responsable</h3>
-                  {selectedHealthBook.approvalVeterinarian.name ? (
-                    <div className="space-y-2">
-                      <p><strong>Nombre:</strong> {selectedHealthBook.approvalVeterinarian.name} {selectedHealthBook.approvalVeterinarian.lastName}</p>
-                      <p><strong>Email:</strong> {selectedHealthBook.approvalVeterinarian.email}</p>
-                      <p><strong>Identificación:</strong> {selectedHealthBook.approvalVeterinarian.identification}</p>
-                    </div>
+                  {detail.approvalVeterinarian ? (
+                    <p>{detail.approvalVeterinarian.name} {detail.approvalVeterinarian.lastName}</p>
                   ) : (
                     <p className="text-gray-500">Sin veterinario asignado</p>
                   )}
@@ -383,7 +258,7 @@ const HealthBooksManagement = () => {
                   <Droplets className="w-5 h-5 mr-2 text-red-600" />
                   Extracciones de Sangre
                 </h3>
-                {selectedHealthBook.extractionInfoList.length > 0 ? (
+                {detail.extractionInfoList && detail.extractionInfoList.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -393,7 +268,7 @@ const HealthBooksManagement = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedHealthBook.extractionInfoList.map((extraction) => (
+                      {detail.extractionInfoList.map((extraction) => (
                         <TableRow key={extraction.id}>
                           <TableCell>{new Date(extraction.extractionDate).toLocaleDateString()}</TableCell>
                           <TableCell>{extraction.veterinarianName} {extraction.veterinarianLastName}</TableCell>
@@ -412,7 +287,7 @@ const HealthBooksManagement = () => {
                   <Syringe className="w-5 h-5 mr-2 text-green-600" />
                   Aplicaciones de Vacunas
                 </h3>
-                {selectedHealthBook.vaccineApplicationInfoList.length > 0 ? (
+                {detail.vaccineApplicationInfoList && detail.vaccineApplicationInfoList.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -423,7 +298,7 @@ const HealthBooksManagement = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedHealthBook.vaccineApplicationInfoList.map((vaccine) => (
+                      {detail.vaccineApplicationInfoList.map((vaccine) => (
                         <TableRow key={vaccine.id}>
                           <TableCell>
                             <div>
@@ -443,6 +318,8 @@ const HealthBooksManagement = () => {
                 )}
               </div>
             </div>
+          ) : (
+            <p className="text-gray-500">No hay detalle disponible</p>
           )}
         </DialogContent>
       </Dialog>
