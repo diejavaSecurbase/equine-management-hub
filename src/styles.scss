@@ -1,0 +1,199 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap');
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+
+:root {
+  --primary-color: #7D5B47;
+  --primary-light: #9A7B5A;
+  --primary-dark: #6A4D3D;
+  --secondary-color: #8B6B4F;
+  --background-color: #f8f9fa;
+  --surface-color: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto Condensed', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Roboto Condensed', sans-serif;
+  font-weight: 700;
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, #7D5B47 0%, #9A7B5A 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.text-primary-brand {
+  color: #7D5B47;
+}
+
+.bg-primary-brand {
+  background-color: #7D5B47;
+}
+
+.border-primary-brand {
+  border-color: #7D5B47;
+}
+
+.hover-primary-brand:hover {
+  background-color: #6A4D3D;
+}
+
+/* Angular Material customizations */
+.mat-mdc-card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+}
+
+.mat-mdc-button.mat-primary {
+  --mdc-filled-button-container-color: #7D5B47;
+  --mdc-filled-button-label-text-color: white;
+}
+
+.mat-mdc-button.mat-primary:hover {
+  --mdc-filled-button-container-color: #6A4D3D;
+}
+
+/* Sidebar styles */
+.sidebar {
+  background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+  border-right: 1px solid var(--border-color);
+}
+
+.sidebar-header {
+  background: linear-gradient(135deg, #7D5B47 0%, #9A7B5A 100%);
+  color: white;
+  padding: 1.5rem;
+}
+
+.sidebar-menu-item {
+  padding: 0.75rem 1rem;
+  margin: 0.25rem 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebar-menu-item:hover {
+  background-color: rgba(125, 91, 71, 0.1);
+  color: #7D5B47;
+}
+
+.sidebar-menu-item.active {
+  background-color: #7D5B47;
+  color: white;
+  border-right: 4px solid #9A7B5A;
+}
+
+/* Table styles */
+.mat-mdc-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.mat-mdc-header-row {
+  background-color: #f8f9fa;
+}
+
+.mat-mdc-row:hover {
+  background-color: rgba(125, 91, 71, 0.05);
+}
+
+/* Form styles */
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-form-field.mat-focused .mat-mdc-form-field-focus-overlay {
+  background-color: rgba(125, 91, 71, 0.12);
+}
+
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+.mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-color: #7D5B47;
+}
+
+/* Badge styles */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-success {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-error {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+/* Loading spinner */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .sidebar.open {
+    left: 0;
+  }
+  
+  .main-content {
+    margin-left: 0;
+  }
+}

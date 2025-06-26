@@ -1,0 +1,22 @@
+.mat-mdc-card {
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, #7D5B47 0%, #9A7B5A 100%);
+}
+
+.mat-mdc-form-field {
+  margin-bottom: 1rem;
+}
+
+.mat-mdc-raised-button.gradient-primary {
+  background: linear-gradient(135deg, #7D5B47 0%, #9A7B5A 100%);
+  color: white;
+  border: none;
+}
+
+.mat-mdc-raised-button.gradient-primary:hover {
+  background: linear-gradient(135deg, #6A4D3D 0%, #8B6B4F 100%);
+}
